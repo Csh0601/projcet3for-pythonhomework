@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c:*)",
+      "Bash(python report_generator.py:*)",
+      "Bash(pip install:*)",
+      "Bash(dir /b \"D:\\python作业合集\\python作业3\\outputs\\figures\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

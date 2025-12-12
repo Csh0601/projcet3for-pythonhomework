@@ -1,0 +1,359 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[UTF8]{ctex}
+
+% ==================== 页面设置 ====================
+\usepackage[margin=1.8cm, top=2cm, bottom=1.8cm]{geometry}
+\usepackage{setspace}
+\setstretch{1.0}
+\setlength{\parskip}{0.15em}
+\setlength{\headheight}{14.5pt}
+
+% ==================== 代码高亮 ====================
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.95}
+\definecolor{myred}{rgb}{0.8,0,0}
+\definecolor{myblue}{rgb}{0.1,0.3,0.6}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\tiny,
+    breaklines=true,
+    keepspaces=true,
+    numbers=left,
+    numbersep=2pt,
+    tabsize=2,
+    language=Python,
+    frame=single,
+    xleftmargin=0.8em,
+    framexleftmargin=0.4em
+}
+\lstset{style=mystyle}
+
+% ==================== 图表支持 ====================
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows, positioning, fit, calc, shapes.arrows}
+
+% ==================== 超链接 ====================
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=cyan}
+
+% ==================== 其他 ====================
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{fancyhdr}
+\usepackage{float}
+\usepackage{multicol}
+\usepackage{tabularx}
+\usepackage{subcaption}
+\usepackage{caption}
+
+% 紧凑列表
+\setlist{nosep, leftmargin=1.5em}
+
+% 紧凑图表标题
+\captionsetup{font=footnotesize, skip=2pt}
+
+% 减少浮动体间距
+\setlength{\intextsep}{2pt plus 1pt minus 1pt}
+\setlength{\floatsep}{2pt plus 1pt minus 1pt}
+\setlength{\textfloatsep}{4pt plus 1pt minus 2pt}
+
+% 页眉页脚
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small Project 3: Iris Classification}
+\lhead{\small Python Programming}
+\rfoot{\small Page \thepage}
+
+% ============================================
+\begin{document}
+
+% ==================== 紧凑标题头 ====================
+\begin{center}
+{\LARGE\bfseries Python程序设计 \quad 实验报告}\\[0.25cm]
+{\large\bfseries Project 3: 鸢尾花数据集分类与可视化}\\[0.25cm]
+\begin{tabular}{cccc}
+\textbf{姓名：}陈铄涵 & \textbf{学号：}2024140014 & \textbf{课程：}Python程序设计 & \textbf{日期：}2025/12/12
+\end{tabular}
+\end{center}
+\vspace{-0.2cm}
+\hrule
+\vspace{0.3cm}
+
+% ==================== 正文开始 ====================
+\section{项目概述与工作内容}
+
+本项目基于经典的鸢尾花(Iris)数据集，\textbf{\textcolor{myred}{独立设计并实现了完整的分类与可视化系统}}，涵盖四种分类任务：\textbf{四特征三分类}（数据探索）、\textbf{两特征三分类}（2D决策边界）、\textbf{三特征两分类}（3D二分类边界）、\textbf{三特征三分类}（3D三分类边界）。
+
+\vspace{0.1cm}
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=0.5cm,
+    startstop/.style={rectangle, rounded corners, minimum width=1.5cm, minimum height=0.5cm, text centered, draw=black, fill=red!20, font=\scriptsize},
+    process/.style={rectangle, minimum width=1.5cm, minimum height=0.5cm, text centered, draw=black, fill=blue!15, font=\scriptsize},
+    myprocess/.style={rectangle, minimum width=1.5cm, minimum height=0.5cm, text centered, draw=red!70, fill=red!10, line width=1pt, font=\scriptsize\bfseries},
+    arrow/.style={thick,->,>=stealth}
+]
+    \node (start) [startstop] {数据加载};
+    \node (feat) [process, right=of start] {特征分析};
+    \node (train) [process, right=of feat] {模型训练};
+    \node (vis2d) [myprocess, right=of train] {2D可视化};
+    \node (vis3d) [myprocess, right=of vis2d] {3D可视化};
+    \node (report) [startstop, right=of vis3d] {报告生成};
+    
+    \draw [arrow] (start) -- (feat);
+    \draw [arrow] (feat) -- (train);
+    \draw [arrow] (train) -- (vis2d);
+    \draw [arrow] (vis2d) -- (vis3d);
+    \draw [arrow] (vis3d) -- (report);
+\end{tikzpicture}
+\caption{项目工作流程图（红框为本人重点实现：决策边界可视化模块）}
+\end{figure}
+
+\vspace{-0.2cm}
+% ==================== 项目框架 ====================
+\section{项目框架与系统架构}
+
+\vspace{-0.1cm}
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    node distance=0.35cm and 0.5cm,
+    config/.style={rectangle, rounded corners, minimum width=2.5cm, minimum height=0.7cm, text centered, align=center, draw=black, fill=orange!30, font=\tiny\ttfamily},
+    module/.style={rectangle, rounded corners, minimum width=2cm, minimum height=0.6cm, text centered, align=center, draw=black, fill=blue!20, font=\tiny\ttfamily},
+    mymodule/.style={rectangle, rounded corners, minimum width=2cm, minimum height=0.6cm, text centered, align=center, draw=red!70, fill=red!15, line width=1pt, font=\tiny\ttfamily},
+    file/.style={rectangle, minimum width=1.8cm, minimum height=0.35cm, text centered, draw=black, fill=gray!10, font=\tiny\ttfamily},
+    myfile/.style={rectangle, minimum width=1.8cm, minimum height=0.35cm, text centered, draw=red!70, fill=red!10, line width=0.8pt, font=\tiny\ttfamily},
+    main/.style={rectangle, rounded corners, minimum width=2.2cm, minimum height=0.45cm, text centered, draw=black, fill=green!20, font=\tiny\ttfamily},
+    arrow/.style={->, thick, >=stealth}
+]
+    % 顶层配置
+    \node[config] (config) {config.py\\(全局配置)};
+    
+    % 三个模块
+    \node[module] (analysis) [below left=0.5cm and 1.3cm of config] {src/analysis/\\数据分析};
+    \node[mymodule] (visual) [below=0.5cm of config] {src/visualization/\\可视化模块};
+    \node[module] (utils) [below right=0.5cm and 1.3cm of config] {src/utils/\\工具模块};
+    
+    % analysis下的文件
+    \node[myfile] (f1) [below=0.25cm of analysis] {1\_feature\_distribution};
+    \node[myfile] (f2) [below=0.12cm of f1] {2\_feature\_analysis};
+    
+    % visualization下的文件
+    \node[myfile] (f3) [below=0.25cm of visual] {3\_2d\_decision\_boundary};
+    \node[myfile] (f4) [below=0.12cm of f3] {4\_2d\_probability\_map};
+    \node[myfile] (f5) [below=0.12cm of f4] {5\_3d\_boundary\_binary};
+    \node[myfile] (f6) [below=0.12cm of f5] {6\_3d\_probability\_binary};
+    \node[myfile] (f7) [below=0.12cm of f6] {7\_3d\_boundary\_multiclass};
+    
+    % utils下的文件
+    \node[file] (u1) [below=0.25cm of utils] {dataloading.py};
+    \node[file] (u2) [below=0.12cm of u1] {model\_build\_train};
+    \node[file] (u3) [below=0.12cm of u2] {evaluation\_metrics};
+    
+    % 主程序
+    \node[main] (runner) [below=2.4cm of config] {8\_main\_runner.py};
+    \node[main] (report) [below=0.2cm of runner] {report\_generator.py};
+    
+    % 连接线
+    \draw [arrow] (config) -- (analysis);
+    \draw [arrow] (config) -- (visual);
+    \draw [arrow] (config) -- (utils);
+    \draw [arrow] (analysis) -- (f1);
+    \draw [arrow] (visual) -- (f3);
+    \draw [arrow] (utils) -- (u1);
+    % 从f7右侧绕行到runner右侧，不贯穿模块
+    \draw [arrow, dashed] (f7.east) -- ++(1.2,0) |- (runner.east);
+    \draw [arrow] (runner) -- (report);
+    
+    % 图例
+    \node[font=\tiny] at (5,-0.2) {\textcolor{red}{红框}=重点实现};
+    \node[font=\tiny] at (5,-0.5) {\textcolor{orange!70!black}{橙色}=核心配置};
+    \node[font=\tiny] at (5,-0.8) {\textcolor{green!50!black}{绿色}=主程序};
+\end{tikzpicture}
+\caption{项目架构图（共11个核心文件，\textcolor{myred}{本人重点实现8个}）}
+\end{figure}
+
+% ==================== 核心代码 ====================
+\vspace{-0.3cm}
+\section{核心代码与技术亮点}
+
+\vspace{-0.1cm}
+\begin{multicols}{2}
+\subsection*{\textcolor{myred}{1. 科研级深色样式}}
+\begin{lstlisting}
+def set_dark_style():
+  plt.style.use('dark_background')
+  plt.rcParams.update({
+    'figure.facecolor': '#0d0d1a',
+    'axes.facecolor': '#0d0d1a',
+  })
+\end{lstlisting}
+
+\subsection*{\textcolor{myred}{2. 决策边界网格}}
+\begin{lstlisting}
+def create_mesh(X, resolution=200):
+  xx, yy = np.meshgrid(
+    np.linspace(x_min, x_max, resolution),
+    np.linspace(y_min, y_max, resolution))
+  return xx, yy
+\end{lstlisting}
+\end{multicols}
+
+\vspace{-0.4cm}
+\begin{multicols}{2}
+\subsection*{\textcolor{myred}{3. 3D等值面 (Marching Cubes)}}
+\begin{lstlisting}
+from skimage import measure
+verts, faces, _, _ = measure.marching_cubes(
+    prob_volume, level=0.5)
+mesh = Poly3DCollection(verts[faces])
+ax.add_collection3d(mesh)
+\end{lstlisting}
+
+\subsection*{\textcolor{myred}{4. 分类器配置}}
+\begin{lstlisting}
+CLASSIFIERS = {
+  'Logistic Regression': LogisticRegression(),
+  'SVM (RBF)': SVC(kernel='rbf', probability=True),
+  'Random Forest': RandomForestClassifier(),
+  'Gradient Boosting': HistGradientBoostingClassifier(),
+}
+\end{lstlisting}
+\end{multicols}
+
+% ==================== 可视化结果 ====================
+\vspace{-0.3cm}
+\section{可视化结果展示}
+
+本项目实现了四种分类任务的可视化，分别展示如下：
+
+\vspace{-0.1cm}
+\subsection{任务1：四特征三分类（数据探索）}
+
+使用全部4个特征（Sepal Length/Width, Petal Length/Width）对3个鸢尾花品种进行探索性分析。图\ref{fig:task1}左图展示四特征分布（小提琴图+箱线图+散点图），Petal特征呈双峰分布，表明Setosa与其他类差异显著；右图为Pearson相关系数矩阵，Petal Length与Width强正相关（$r=0.96$）。
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.54\textwidth}
+    \includegraphics[width=\textwidth]{figures/feature_distribution_combined.png}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.44\textwidth}
+    \includegraphics[width=\textwidth]{figures/correlation_heatmap.png}
+\end{subfigure}
+\caption{四特征三分类数据探索：左-特征分布分析；右-相关性热力图}
+\label{fig:task1}
+\end{figure}
+
+\vspace{-0.3cm}
+\subsection{任务2：两特征三分类（2D决策边界）}
+
+选取最具区分力的2个特征（Petal Length, Petal Width）进行三分类。图\ref{fig:task2}展示四种分类器的2D决策边界与概率分布对比：Logistic Regression产生线性边界；SVM-RBF和Random Forest捕捉非线性模式；所有分类器对Setosa完美分类，Versicolor与Virginica交界处存在不确定性区域。
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.78\textwidth]{figures/decision_boundary_2d_comparison.png}
+\caption{两特征三分类：四种分类器2D决策边界与概率图对比（Petal Length vs Petal Width）}
+\label{fig:task2}
+\end{figure}
+
+\vspace{-0.3cm}
+\subsection{任务3：三特征两分类（3D二分类边界）}
+
+使用3个特征（Sepal Width, Petal Length, Petal Width）进行两分类任务。图\ref{fig:task3}展示两个二分类场景：左图为Setosa vs Others（边界清晰，线性可分）；右图为Versicolor vs Virginica（边界复杂，需非线性分类器）。采用Marching Cubes算法提取3D等值面。
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{figures/3d_boundary_setosa_vs_others.png}
+    \caption{Setosa vs Others}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.48\textwidth}
+    \includegraphics[width=\textwidth]{figures/3d_boundary_versicolor_vs_virginica.png}
+    \caption{Versicolor vs Virginica}
+\end{subfigure}
+\caption{三特征两分类：3D决策边界可视化（Marching Cubes等值面提取）}
+\label{fig:task3}
+\end{figure}
+
+\vspace{-0.3cm}
+\subsection{任务4：三特征三分类（3D三分类边界）}
+
+使用3个特征同时对3个类别进行分类。图\ref{fig:task4}展示3D三分类综合视图：左上为3D散点图，其他三图为不同平面切片，清晰展示三类的空间分布与决策边界交汇区域。
+
+\begin{figure}[H]
+\centering
+\begin{minipage}[b]{0.58\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{figures/3d_multiclass_combined.png}
+    \captionof{figure}{三特征三分类：3D综合视图（散点图+切片）}
+    \label{fig:task4}
+\end{minipage}
+\hfill
+\begin{minipage}[b]{0.40\textwidth}
+    \centering\footnotesize
+    \captionof{table}{分类器性能（5折交叉验证）}
+    \vspace{0.1cm}
+    \begin{tabular}{lcc}
+    \toprule
+    \textbf{分类器} & \textbf{Acc} & \textbf{F1} \\
+    \midrule
+    Logistic Reg. & 97.3\% & 97.3\% \\
+    SVM (RBF) & 96.7\% & 96.7\% \\
+    Random Forest & 96.7\% & 96.7\% \\
+    Grad. Boost & 94.7\% & 94.6\% \\
+    \bottomrule
+    \end{tabular}
+    \label{tab:performance}
+    \vspace{0.2cm}
+    
+    \small 所有分类器均达到94\%+准确率，验证了可视化方法的有效性。
+\end{minipage}
+\end{figure}
+
+% ==================== 结论 ====================
+\vspace{-0.4cm}
+\section{结论与总结}
+
+\begin{enumerate}
+    \item \textbf{特征重要性}：Petal Length/Width是区分品种的关键特征，仅用两特征即可达95\%+准确率。
+    \item \textbf{类别可分性}：Setosa线性可分；Versicolor与Virginica边界模糊，是分类难点。
+    \item \textbf{可视化价值}：2D/3D决策边界可视化直观展示分类器决策逻辑，识别不确定性区域。
+    \item \textbf{技术创新}：采用Marching Cubes算法提取3D等值面，实现科研级深色可视化风格。
+\end{enumerate}
+
+\noindent\textbf{技术特点：}模块化架构 | 四种分类任务 | Marching Cubes 3D等值面 | 科研级可视化风格
+
+% ==================== 运行说明 ====================
+\vspace{-0.2cm}
+\section{运行说明}
+
+\begin{lstlisting}[language=bash]
+pip install -r requirements.txt     # 安装依赖
+python src/8_main_runner.py         # 一键生成所有可视化
+\end{lstlisting}
+
+% ==================== 教师评语 ====================
+\vspace{0.2cm}
+\section{教师评语}
+
+\noindent\fbox{\parbox{\dimexpr\textwidth-2\fboxsep-2\fboxrule\relax}{
+\vspace{2cm}
+\hfill \textbf{评分：}\underline{\hspace{2cm}} \quad \textbf{日期：}\underline{\hspace{3cm}}
+\vspace{0.2cm}
+}}
+
+\end{document}
